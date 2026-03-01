@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Western Loss Association (Modern Rebuild)
 
-## Getting Started
+Modern Next.js rebuild of `westernloss.org` with the members list consolidated into one searchable page.
 
-First, run the development server:
+## Local development
 
 ```bash
+cd /Users/kup/Desktop/westernloss-modern-site
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build static site
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project is configured for static export (`output: "export"`) so it can be hosted on GitHub Pages.
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+Generated output is written to `out/`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Legacy documents on GitHub Pages
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Linked membership/presentation/news PDFs are mirrored in:
 
-## Deploy on Vercel
+- `public/job/`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+They are served from the same domain after deploy (for example: `/job/Appraisal.pdf`), so you can fully remove GoDaddy hosting without breaking those document links.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contact form email delivery
+
+The contact form posts to [FormSubmit](https://formsubmit.co/) and sends messages to:
+
+- `info@westernloss.org`
+
+FormSubmit requires a one-time activation email for each destination address. Submit the form once, open the activation email for that address, and confirm. After activation, submissions are delivered to that inbox.
+
+## Sanity CMS (for non-technical editors)
+
+This repo is wired so non-technical editors can manage:
+
+- Home page content
+- Events page content
+- Membership page content
+- Members directory company list
+- News posts and albums
+
+### 1) Configure environment
+
+Copy `.env.example` to `.env.local` and set:
+
+```bash
+NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
+NEXT_PUBLIC_SANITY_DATASET=production
+SANITY_STUDIO_PROJECT_ID=your_project_id
+SANITY_STUDIO_DATASET=production
+```
+
+If Sanity is not configured, these pages automatically fall back to the local source content.
+
+### 2) Run the editor UI
+
+```bash
+npm run sanity:dev
+```
+
+This starts Sanity Studio (default: http://localhost:3333) with structured editing for Home, Events, Membership, Members Directory, and News.
+
+### 2.1) First-time content setup in Studio
+
+In Studio, create/edit:
+
+- `Home Page` (single document)
+- `Events Page` (single document)
+- `Membership Page` (single document)
+- `Member Companies` (multiple documents)
+- `News Posts` (multiple documents)
+
+### 3) Publish editor access for your team
+
+Deploy Studio so editors can log in and edit in browser:
+
+```bash
+npm run sanity:deploy
+```
+
+Then invite team members from the Sanity project settings.
+
+### 4) Connect GitHub Pages build to Sanity
+
+Set these repo secrets in GitHub:
+
+- `NEXT_PUBLIC_SANITY_PROJECT_ID`
+- `NEXT_PUBLIC_SANITY_DATASET`
+
+The deploy workflow already passes these secrets during build.
+
+### 5) Set up auto-deploy from Sanity publish
+
+The deploy workflow already supports webhook-triggered builds via `repository_dispatch`.
+
+#### 5.1 Create a GitHub token for webhook calls
+
+Create a fine-grained Personal Access Token with access to this repo and:
+
+- `Actions: Read and write`
+- `Contents: Read and write`
+
+#### 5.2 Create Sanity webhook
+
+In Sanity project settings, add a webhook with:
+
+- URL:
+  `https://api.github.com/repos/<GITHUB_OWNER>/<GITHUB_REPO>/dispatches`
+- Method: `POST`
+- Filter:
+  `_type in ["homePage","eventsPage","membershipPage","memberCompany","newsPost"]`
+- Projection/payload:
+  `{"event_type":"sanity-content-update"}`
+- Headers:
+  - `Authorization: Bearer <YOUR_GITHUB_TOKEN>`
+  - `Accept: application/vnd.github+json`
+  - `X-GitHub-Api-Version: 2022-11-28`
+
+Once this is saved, every publish/update in Sanity for those content types triggers a GitHub Pages rebuild automatically.
+
+## GitHub Pages deployment
+
+The workflow file is:
+
+- `.github/workflows/deploy-pages.yml`
+
+When you push to `main`, GitHub Actions will:
+
+1. Install dependencies
+2. Build the site
+3. Publish `out/` to GitHub Pages
+
+## Custom domain
+
+`public/CNAME` is set to:
+
+- `westernloss.org`
+
+After deployment, point DNS to GitHub Pages:
+
+1. `A` records for `@` to GitHub Pages IPs
+2. `CNAME` for `www` to your GitHub Pages hostname
+
+Then enable custom domain + HTTPS in GitHub Pages settings.
