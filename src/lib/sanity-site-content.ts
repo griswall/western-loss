@@ -47,6 +47,41 @@ export type MembershipPageContent = {
   html: string;
 };
 
+export type ManagedPageKey =
+  | "about"
+  | "aboutBylaws"
+  | "aboutOfficers"
+  | "aboutPresentations"
+  | "membershipCommittee"
+  | "becomeMember"
+  | "membersOverview";
+
+export type ManagedPageContent = {
+  title: string;
+  description: string;
+  bodyHtml: string;
+};
+
+export type ContactPageContent = {
+  eyebrow: string;
+  heading: string;
+  description: string;
+  formHeading: string;
+  subject: string;
+  submitLabel: string;
+  recipientEmail: string;
+};
+
+export const DEFAULT_CONTACT_PAGE_CONTENT: ContactPageContent = {
+  eyebrow: "Contact",
+  heading: "Get in Touch",
+  description: "Use the form below to contact the association.",
+  formHeading: "Contact Form",
+  subject: "Western Loss Association Contact Form",
+  submitLabel: "Send Message",
+  recipientEmail: "info@westernloss.org",
+};
+
 type SanityHomeCard = {
   title?: string;
   eyebrow?: string;
@@ -88,6 +123,22 @@ type SanityMembershipPage = {
 type SanityMemberCompany = {
   company?: string;
   contacts?: string[];
+};
+
+type SanityManagedPage = {
+  title?: string;
+  description?: string;
+  bodyHtml?: string;
+};
+
+type SanityContactPage = {
+  eyebrow?: string;
+  heading?: string;
+  description?: string;
+  formHeading?: string;
+  subject?: string;
+  submitLabel?: string;
+  recipientEmail?: string;
 };
 
 const HOME_PAGE_QUERY = `
@@ -140,6 +191,28 @@ const MEMBER_COMPANIES_QUERY = `
     | order(company asc){
       company,
       contacts
+    }
+`;
+
+const MANAGED_PAGE_QUERY = `
+  *[_type == "managedPage" && pageKey == $pageKey]
+    | order(_updatedAt desc)[0]{
+      title,
+      description,
+      bodyHtml
+    }
+`;
+
+const CONTACT_PAGE_QUERY = `
+  *[_type == "contactPage"]
+    | order(_updatedAt desc)[0]{
+      eyebrow,
+      heading,
+      description,
+      formHeading,
+      subject,
+      submitLabel,
+      recipientEmail
     }
 `;
 
@@ -350,5 +423,60 @@ export async function getSanityMemberCompanies(): Promise<MemberEntry[]> {
   } catch (error) {
     console.error("Sanity member companies fetch failed, using local defaults.", error);
     return [];
+  }
+}
+
+export async function getSanityManagedPageContent(pageKey: ManagedPageKey): Promise<ManagedPageContent | null> {
+  if (!hasSanityConfig()) {
+    return null;
+  }
+
+  try {
+    const row = await fetchSanityQuery<SanityManagedPage | null>(MANAGED_PAGE_QUERY, { pageKey });
+    if (!row) {
+      return null;
+    }
+
+    const title = row.title?.trim();
+    const bodyHtml = row.bodyHtml?.trim();
+
+    if (!title || !bodyHtml) {
+      return null;
+    }
+
+    return {
+      title,
+      description: row.description?.trim() || "",
+      bodyHtml,
+    };
+  } catch (error) {
+    console.error(`Sanity managed page fetch failed for "${pageKey}", using local defaults.`, error);
+    return null;
+  }
+}
+
+export async function getSanityContactPageContent(): Promise<ContactPageContent | null> {
+  if (!hasSanityConfig()) {
+    return null;
+  }
+
+  try {
+    const row = await fetchSanityQuery<SanityContactPage | null>(CONTACT_PAGE_QUERY);
+    if (!row) {
+      return null;
+    }
+
+    return {
+      eyebrow: row.eyebrow?.trim() || DEFAULT_CONTACT_PAGE_CONTENT.eyebrow,
+      heading: row.heading?.trim() || DEFAULT_CONTACT_PAGE_CONTENT.heading,
+      description: row.description?.trim() || DEFAULT_CONTACT_PAGE_CONTENT.description,
+      formHeading: row.formHeading?.trim() || DEFAULT_CONTACT_PAGE_CONTENT.formHeading,
+      subject: row.subject?.trim() || DEFAULT_CONTACT_PAGE_CONTENT.subject,
+      submitLabel: row.submitLabel?.trim() || DEFAULT_CONTACT_PAGE_CONTENT.submitLabel,
+      recipientEmail: row.recipientEmail?.trim() || DEFAULT_CONTACT_PAGE_CONTENT.recipientEmail,
+    };
+  } catch (error) {
+    console.error("Sanity contact page fetch failed, using local defaults.", error);
+    return null;
   }
 }

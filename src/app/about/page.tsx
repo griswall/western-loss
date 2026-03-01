@@ -1,13 +1,16 @@
 import { PageShell } from "@/components/page-shell";
 import { legacyPages } from "@/data/legacy-pages";
+import { getSanityManagedPageContent } from "@/lib/sanity-site-content";
 import { aboutNav } from "@/lib/site-nav";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const content = await getSanityManagedPageContent("about");
+
   return (
     <PageShell
-      title={legacyPages.about.title}
-      description="History, mission, and focus of the Western Loss Association."
-      html={legacyPages.about.html}
+      title={content?.title ?? legacyPages.about.title}
+      description={content?.description || "History, mission, and focus of the Western Loss Association."}
+      html={content?.bodyHtml ?? legacyPages.about.html}
       sidebarTitle="About"
       sidebarLinks={aboutNav}
       activePath="/about"

@@ -47,6 +47,10 @@ This repo is wired so non-technical editors can manage:
 - Membership page content
 - Members directory company list
 - News posts and albums
+- About, By-Laws, Officers, Presentations
+- Membership Committee and Become a Member pages
+- Members directory intro content
+- Contact page copy + recipient email
 
 ### 1) Configure environment
 
@@ -55,6 +59,7 @@ Copy `.env.example` to `.env.local` and set:
 ```bash
 NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
 NEXT_PUBLIC_SANITY_DATASET=production
+NEXT_PUBLIC_SITE_URL=https://westernloss.org
 SANITY_STUDIO_PROJECT_ID=your_project_id
 SANITY_STUDIO_DATASET=production
 ```
@@ -76,8 +81,22 @@ In Studio, create/edit:
 - `Home Page` (single document)
 - `Events Page` (single document)
 - `Membership Page` (single document)
+- `Contact Page` (single document)
+- `Managed Pages` (About / By-Laws / Officers / Presentations / Membership Committee / Become a Member / Members Intro)
 - `Member Companies` (multiple documents)
 - `News Posts` (multiple documents)
+
+### 2.2) Seed existing site content into CMS
+
+Run these once to preload existing content so editors do not start from blank sections:
+
+```bash
+npm run sanity:seed:pages
+npm run sanity:import:members
+npm run sanity:mirror:news-images
+npm run sanity:import:news
+npm run sanity:fix:news-keys
+```
 
 ### 3) Publish editor access for your team
 
@@ -117,7 +136,7 @@ In Sanity project settings, add a webhook with:
   `https://api.github.com/repos/<GITHUB_OWNER>/<GITHUB_REPO>/dispatches`
 - Method: `POST`
 - Filter:
-  `_type in ["homePage","eventsPage","membershipPage","memberCompany","newsPost"]`
+  `_type in ["homePage","eventsPage","membershipPage","contactPage","managedPage","memberCompany","newsPost"]`
 - Projection/payload:
   `{"event_type":"sanity-content-update"}`
 - Headers:

@@ -35,7 +35,7 @@ const NEWS_QUERY = `
         _key,
         title,
         photos[]{
-          "url": asset->url,
+          "url": coalesce(image.asset->url, externalUrl),
           "caption": coalesce(alt, caption, "")
         }
       }
@@ -69,6 +69,10 @@ function formatDate(value: string | undefined): string {
 }
 
 function buildThumbUrl(url: string): string {
+  if (!url.includes(".sanity.io/")) {
+    return url;
+  }
+
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}auto=format&w=360&h=240&fit=crop`;
 }

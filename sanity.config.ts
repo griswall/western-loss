@@ -28,7 +28,11 @@ export default defineConfig({
             S.listItem()
               .title("Membership Page")
               .child(S.document().schemaType("membershipPage").documentId("membershipPage")),
+            S.listItem()
+              .title("Contact Page")
+              .child(S.document().schemaType("contactPage").documentId("contactPage")),
             S.divider(),
+            S.documentTypeListItem("managedPage").title("Managed Pages"),
             S.documentTypeListItem("newsPost").title("News Posts"),
             S.documentTypeListItem("memberCompany").title("Member Companies"),
           ]),

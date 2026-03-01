@@ -6,6 +6,13 @@ export const newsPostType = defineType({
   type: "document",
   fields: [
     defineField({
+      name: "legacyId",
+      title: "Legacy ID",
+      type: "string",
+      hidden: true,
+      readOnly: true,
+    }),
+    defineField({
       name: "title",
       title: "Headline",
       type: "string",
@@ -61,9 +68,21 @@ export const newsPostType = defineType({
               type: "array",
               of: [
                 defineArrayMember({
-                  type: "image",
-                  options: { hotspot: true },
+                  type: "object",
+                  name: "albumPhoto",
                   fields: [
+                    defineField({
+                      name: "image",
+                      title: "Uploaded Image",
+                      type: "image",
+                      options: { hotspot: true },
+                    }),
+                    defineField({
+                      name: "externalUrl",
+                      title: "External Image URL",
+                      type: "string",
+                      description: "Use for legacy/imported photos if you do not upload an image.",
+                    }),
                     defineField({
                       name: "alt",
                       title: "Photo Alt Text",
@@ -75,6 +94,21 @@ export const newsPostType = defineType({
                       type: "string",
                     }),
                   ],
+                  validation: (rule) =>
+                    rule.custom((value) => {
+                      if (!value || typeof value !== "object") {
+                        return "Add an uploaded image or external image URL.";
+                      }
+
+                      const hasImage = Boolean((value as { image?: unknown }).image);
+                      const hasExternalUrl = Boolean(
+                        (value as { externalUrl?: string }).externalUrl?.trim(),
+                      );
+
+                      return hasImage || hasExternalUrl
+                        ? true
+                        : "Add an uploaded image or external image URL.";
+                    }),
                 }),
               ],
             }),

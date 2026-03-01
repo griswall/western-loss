@@ -1,5 +1,6 @@
 import { PageShell } from "@/components/page-shell";
 import { legacyPages } from "@/data/legacy-pages";
+import { getSanityManagedPageContent } from "@/lib/sanity-site-content";
 import { aboutNav } from "@/lib/site-nav";
 
 function formatPresentationsHtml(rawHtml: string): string {
@@ -34,12 +35,15 @@ function formatPresentationsHtml(rawHtml: string): string {
   return `<div class="presentation-list">${items.join("")}</div>`;
 }
 
-export default function AboutPresentationsPage() {
+export default async function AboutPresentationsPage() {
+  const content = await getSanityManagedPageContent("aboutPresentations");
+  const sourceHtml = content?.bodyHtml ?? legacyPages.aboutPresentations.html;
+
   return (
     <PageShell
-      title={legacyPages.aboutPresentations.title}
-      description="Presentation downloads and educational materials."
-      html={formatPresentationsHtml(legacyPages.aboutPresentations.html)}
+      title={content?.title ?? legacyPages.aboutPresentations.title}
+      description={content?.description || "Presentation downloads and educational materials."}
+      html={formatPresentationsHtml(sourceHtml)}
       sidebarTitle="About"
       sidebarLinks={aboutNav}
       contentClassName="presentations-content"

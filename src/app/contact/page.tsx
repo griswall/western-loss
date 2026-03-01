@@ -1,24 +1,28 @@
-const CONTACT_EMAIL = "info@westernloss.org";
-const FORMSUBMIT_ENDPOINT = `https://formsubmit.co/${CONTACT_EMAIL}`;
+import {
+  DEFAULT_CONTACT_PAGE_CONTENT,
+  getSanityContactPageContent,
+} from "@/lib/sanity-site-content";
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const content = (await getSanityContactPageContent()) ?? DEFAULT_CONTACT_PAGE_CONTENT;
+  const endpointEmail = content.recipientEmail;
+  const formSubmitEndpoint = `https://formsubmit.co/${endpointEmail}`;
+
   return (
     <main className="page-main">
       <section className="hero-band">
         <div className="container hero-copy">
-          <p className="eyebrow">Contact</p>
-          <h1>Get in Touch</h1>
-          <p className="hero-description">
-            Use the form below or email the association directly.
-          </p>
+          <p className="eyebrow">{content.eyebrow}</p>
+          <h1>{content.heading}</h1>
+          <p className="hero-description">{content.description}</p>
         </div>
       </section>
 
       <section className="container">
         <article className="content-card contact-card">
-          <h2>Contact Form</h2>
-          <form action={FORMSUBMIT_ENDPOINT} method="POST" className="contact-form">
-            <input type="hidden" name="_subject" value="Western Loss Association Contact Form" />
+          <h2>{content.formHeading}</h2>
+          <form action={formSubmitEndpoint} method="POST" className="contact-form">
+            <input type="hidden" name="_subject" value={content.subject} />
             <input type="hidden" name="_captcha" value="false" />
             <input type="hidden" name="_template" value="table" />
             <input type="text" name="_honey" className="visually-hidden" tabIndex={-1} autoComplete="off" />
@@ -44,7 +48,7 @@ export default function ContactPage() {
             <textarea id="message" name="message" rows={8} placeholder="Message" required />
 
             <button type="submit" className="button-primary">
-              Send Message
+              {content.submitLabel}
             </button>
           </form>
         </article>
