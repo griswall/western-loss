@@ -1207,6 +1207,22 @@ textarea::placeholder {
   color: var(--ink-muted);
 }
 
+.form-success {
+  display: none;
+  margin: 0 0 12px;
+  border: 1px solid #9fd3b2;
+  background: #edf9f1;
+  color: #1e5b38;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.form-success:target {
+  display: block;
+}
+
 .visually-hidden {
   position: absolute !important;
   width: 1px;
