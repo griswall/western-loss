@@ -1,25 +1,40 @@
 const WESTERNLOSS_ROOT = "https://westernloss.org";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH?.trim() || "";
+
+function withBasePath(pathname: string): string {
+  if (!pathname.startsWith("/")) {
+    return pathname;
+  }
+
+  return basePath ? `${basePath}${pathname}` : pathname;
+}
 
 export function normalizeLegacyHtml(input: string): string {
   return input
     .replace(/&#038;/gi, "&")
     .replace(
       /(href|src)=(["'])https?:\/\/(www\.)?westernloss\.org\/job\//gi,
-      (_: string, attr: string, quote: string) => `${attr}=${quote}/job/`,
+      (_: string, attr: string, quote: string) => `${attr}=${quote}${withBasePath("/job/")}`,
     )
     .replace(
       /(href|src)=(["'])https?:\/\/(www\.)?westernloss\.org\/wla_donation\.pdf/gi,
-      (_: string, attr: string, quote: string) => `${attr}=${quote}/job/wla_donation.pdf`,
+      (_: string, attr: string, quote: string) =>
+        `${attr}=${quote}${withBasePath("/job/wla_donation.pdf")}`,
     )
     .replace(
       /(href|src)=(["'])\/wla_donation\.pdf/gi,
-      (_: string, attr: string, quote: string) => `${attr}=${quote}/job/wla_donation.pdf`,
+      (_: string, attr: string, quote: string) =>
+        `${attr}=${quote}${withBasePath("/job/wla_donation.pdf")}`,
+    )
+    .replace(
+      /(href|src)=(["'])\/job\//gi,
+      (_: string, attr: string, quote: string) => `${attr}=${quote}${withBasePath("/job/")}`,
     )
     .replace(/https?:\/\/(www\.)?westernloss\.org/gi, WESTERNLOSS_ROOT)
     .replace(
       /(href|src)=(["'])\/(wp-content|wp-includes)\//gi,
       (_, attr: string, quote: string, section: string) =>
-        `${attr}=${quote}${WESTERNLOSS_ROOT}/${section}/`,
+        `${attr}=${quote}${basePath ? withBasePath(`/${section}/`) : `${WESTERNLOSS_ROOT}/${section}/`}`,
     )
     .replace(/<strong>\s*(<a\b[^>]*>[\s\S]*?<\/a>)\s*<\/strong>/gi, "$1")
     .replace(/<b>\s*(<a\b[^>]*>[\s\S]*?<\/a>)\s*<\/b>/gi, "$1")
