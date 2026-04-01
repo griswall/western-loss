@@ -22,6 +22,15 @@ export type NewsPost = {
 
 const GENERIC_IMAGE_TITLE =
   /^(?:photo|image|img|on tap[-\s]?[a-z]?|post[\s_-]*\d+|[a-z]?\d{3,}|20\d{2}[_-]?post[_-]?\d+)$/i;
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH?.trim() || "";
+
+function withBasePath(pathname: string): string {
+  if (!pathname.startsWith("/")) {
+    return pathname;
+  }
+
+  return basePath ? `${basePath}${pathname}` : pathname;
+}
 
 function stripTags(input: string): string {
   return input
@@ -237,6 +246,36 @@ function hasMeaningfulBodyContent(html: string): boolean {
   return plain.length > 0;
 }
 
+function removeInlineImages(html: string): string {
+  return html
+    .replace(/<a\b[^>]*>\s*<img[^>]*>\s*<\/a>/gi, "")
+    .replace(/<img[^>]*>/gi, "")
+    .replace(/<p>\s*(?:<br\s*\/?>|\u00a0|&nbsp;|\s)*<\/p>/gi, "")
+    .trim();
+}
+
+function stripWordPressThumbSuffix(pathname: string): string {
+  return pathname.replace(/-\d+x\d+(?=\.[a-z0-9]+$)/i, "");
+}
+
+function normalizeAlbumImagePath(url: string, preferOriginal = false): string {
+  const trimmed = url.trim();
+  const uploadMatch = trimmed.match(
+    /^(?:https?:\/\/(?:www\.)?westernloss\.org)?(\/wp-content\/uploads\/[^?#]+)(?:[?#].*)?$/i,
+  );
+
+  if (uploadMatch) {
+    const uploadPath = preferOriginal ? stripWordPressThumbSuffix(uploadMatch[1]) : uploadMatch[1];
+    return withBasePath(`/legacy-news-assets${uploadPath}`);
+  }
+
+  if (trimmed.startsWith("/")) {
+    return withBasePath(trimmed);
+  }
+
+  return trimmed;
+}
+
 function albumTitleCandidate(raw: string): string {
   const cleaned = stripTags(raw)
     .replace(/[_-]+/g, " ")
@@ -285,9 +324,9 @@ function extractAlbums(html: string, postIndex: number): { bodyHtml: string; alb
     ];
 
     const images: NewsAlbumImage[] = imageMatches.map((match) => ({
-      fullSrc: match[1],
+      fullSrc: normalizeAlbumImagePath(match[1]),
       title: stripTags(match[2] ?? "Photo"),
-      thumbSrc: match[3],
+      thumbSrc: normalizeAlbumImagePath(match[3], true),
     }));
 
     if (images.length) {
@@ -345,7 +384,7 @@ export function parseNewsPosts(rawHtml: string): NewsPost[] {
     }
 
     const { bodyHtml: htmlWithoutAlbums, albums } = extractAlbums(bodyHtml, index);
-    let cleanedBody = htmlWithoutAlbums.replace(/<p>\s*<\/p>/gi, "").trim();
+    let cleanedBody = removeInlineImages(htmlWithoutAlbums.replace(/<p>\s*<\/p>/gi, "").trim());
 
     if (!cleanedBody && albums.length === 0) {
       continue;
